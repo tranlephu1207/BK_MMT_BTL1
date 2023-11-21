@@ -6,7 +6,7 @@ import os
 import sys
 import select
 
-host = ''
+host = '61.28.231.242'
 port = 9896
 backlog = 10
 size = 4096

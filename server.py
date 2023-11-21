@@ -89,9 +89,11 @@ def start(client,input,dict,c_info,log):
                     client.send('You have exceeded the no. of retries')        
 
         if data == '\help':                 #if help command is given
+            print('Hello')
             usage(client)    
 
         if data =='\GET_CLIENT_LIST':       #send list of connected clients to user
+            print('Get client list')
             client.send('\CLIENT_LIST: ' +str(dict.keys()))
 
         if data =='\GET_CLIENT_INFO':       #sends listening port of client
