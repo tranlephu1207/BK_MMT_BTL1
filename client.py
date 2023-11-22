@@ -5,6 +5,7 @@ import socket
 import os
 import sys
 import select
+import urllib2
 
 host = '61.28.231.242'
 port = 9896
@@ -119,6 +120,14 @@ def main():
         print 'Unable to connect to chat server'
         sys.exit()
     while 1:
+        # host = sock.getpeername()[0]
+        hostname = socket.gethostname()
+        ip_address = socket.gethostbyname(hostname)
+        print(hostname)
+        print(ip_address)
+        external_ip = urllib2.urlopen('https://ident.me').read().decode('utf8')
+        print(external_ip)
+
         data = sock.recv(size)
         if data.isdigit() and int(data)>2000:
             cconnect(data)
