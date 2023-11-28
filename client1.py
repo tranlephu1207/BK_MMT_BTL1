@@ -1,9 +1,13 @@
 import socket
 import select
 import threading
+import pprint
 
 import urllib.request
 
+CLIENT_IP = socket.gethostbyname(socket.gethostname())
+CLIENT_PORT = 57244
+CLIENT_ADDR = (CLIENT_IP, CLIENT_PORT)
 
 # IP = socket.gethostbyname(socket.gethostname())
 IP =  '61.28.231.242'
@@ -38,12 +42,14 @@ def cconnect(peer_ip, peer_port, fname, lname):
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        soc.connect((peer_ip,peer_port))
+        # soc.connect((peer_ip,peer_port))
+        soc.connect((peer_ip,CLIENT_PORT))
     except:
         print('Unable to connect to client')
     print('now connected')
     while 1:
         msg = soc.recv(SIZE)
+        pprint.pprint(msg)
         if DOWNLOAD in msg:
             sendf(soc)
         if EXIT in msg:
@@ -70,14 +76,16 @@ def handle_client(conn, addr):
         print(f"DOWNLOAD: ")
 
 def plisten():
-  external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
-  print(external_ip)
+  # external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
+  # print(external_ip)
   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
   #binding the socket to external ip and port
-  s.bind(("0.0.0.0", LISTEN_PORT))
+  s.bind(CLIENT_ADDR)
   s.listen()
-  print(f"listening to {external_ip}:{LISTEN_PORT}")
+  # print(f"listening to {external_ip}:{LISTEN_PORT}")
+  print(f"listening to {CLIENT_IP}:{CLIENT_PORT}")
+
 
   while True:
     conn, addr = s.accept()
