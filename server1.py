@@ -99,11 +99,12 @@ def handle_client(conn, addr):
   conn.close()
 
 def server_terminal():
-  server_command = input()
-  print(f"server_command: {server_command}")
+  # server_command = input()
+  # print(f"server_command: {server_command}")
   open_terminal = True
   while open_terminal:
-    server_command = input('> ')
+    server_command = input()
+    print(f"server_command: {server_command}")
     if server_command == CLOSE_TERMINAL:
       open_terminal = False
     elif GET_CONNECTIONS in server_command:

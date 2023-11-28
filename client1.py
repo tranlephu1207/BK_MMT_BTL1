@@ -10,7 +10,9 @@ CLIENT_PORT = 57244
 CLIENT_ADDR = (CLIENT_IP, CLIENT_PORT)
 
 # IP = socket.gethostbyname(socket.gethostname())
-IP =  '61.28.231.242'
+# IP = "0.0.0.0"
+IP = "192.168.1.12"
+# IP =  '61.28.231.242'
 # IP = socket.gethostbyname(socket.gethostname())
 PORT = 9896
 ADDR = (IP, PORT)
@@ -42,10 +44,11 @@ def cconnect(peer_ip, peer_port, fname, lname):
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        # soc.connect((peer_ip,peer_port))
-        soc.connect((peer_ip,CLIENT_PORT))
+        soc.connect((peer_ip,peer_port))
+        # soc.connect((peer_ip,CLIENT_PORT))
     except:
         print('Unable to connect to client')
+        return
     print('now connected')
     while 1:
         msg = soc.recv(SIZE)
@@ -122,7 +125,8 @@ def pconnect():
       lname = infos[2]
       peer_ip = infos[3]
       peer_port = infos[4]
-      cconnect(peer_ip=peer_ip, peer_port=peer_port, fname=fname, lname=lname)
+      if peer_ip == CLIENT_IP:
+        cconnect(peer_ip=peer_ip, peer_port=peer_port, fname=fname, lname=lname)
     elif SEND in msg:
       print('SEND')
       # msg = client.recv(SIZE).decode(FORMAT)
