@@ -11,8 +11,8 @@ CLIENT_ADDR = (CLIENT_IP, CLIENT_PORT)
 
 # IP = socket.gethostbyname(socket.gethostname())
 # IP = "0.0.0.0"
-IP = "192.168.1.12"
-# IP =  '61.28.231.242'
+# IP = "192.168.1.12"
+IP =  '61.28.231.242'
 # IP = socket.gethostbyname(socket.gethostname())
 PORT = 9896
 ADDR = (IP, PORT)
@@ -31,43 +31,41 @@ LISTEN_PORT = 57244
 local_files = {}
 
 #function to send file
-def sendf(soc):
-    soc.send('file name: ')
-    fname = soc.recv(SIZE)    
-    file=open(fname,'rb')
+def sendf(soc, lname):
+    file=open(lname,'rb')
     data=file.read()
+    print(f"send file {data}")
     soc.send(data)
     print('File sent')
+
+#function to receive file
+def recvf(soc, fname):
+    data = soc.recv(40960)
+    print(f"receiving file")
+    file=open(fname,'w')
+    file.write(str(data))
+    file.close()
+    print('File received')
 
 #function for client to connect to listening client                
 def cconnect(peer_ip, peer_port, fname, lname):
     soc = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        soc.connect((peer_ip,peer_port))
-        # soc.connect((peer_ip,CLIENT_PORT))
+        # soc.connect((peer_ip,peer_port))
+        soc.connect((peer_ip,CLIENT_PORT))
     except:
         print('Unable to connect to client')
         return
     print('now connected')
+    msg = f"download {fname} {lname}".encode(FORMAT)
+    soc.send(msg)
+    recvf(soc, fname=fname)
     while 1:
-        msg = soc.recv(SIZE)
-        pprint.pprint(msg)
-        if DOWNLOAD in msg:
-            sendf(soc)
-        if EXIT in msg:
-            print('session ended')
-            soc.close()
-            break
-        # user_input = raw_input('<Me> ')
-        # soc.send(user_input)
-        # if user_input == '\SEND_FILE':
-        #     recvf(soc)  
-        # if user_input == '\CLOSE_SESSION':
-        #     print 'session ended'
-        #     soc.close()
-        #     break
-    return
+       data = soc.recv(SIZE).decode(FORMAT)
+       if EXIT in data:
+          soc.close()
+          break
 
 def handle_client(conn, addr):
     print(f"[PEER NEW CONNECTION] {addr} connected")
@@ -79,14 +77,10 @@ def handle_client(conn, addr):
         print(f"DOWNLOAD: ")
 
 def plisten():
-  # external_ip = urllib.request.urlopen('https://ident.me').read().decode('utf8')
-  # print(external_ip)
   s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-  #binding the socket to external ip and port
   s.bind(CLIENT_ADDR)
   s.listen()
-  # print(f"listening to {external_ip}:{LISTEN_PORT}")
   print(f"listening to {CLIENT_IP}:{CLIENT_PORT}")
 
 
@@ -95,6 +89,19 @@ def plisten():
     thread = threading.Thread(target=handle_client, args=(conn, addr))
     thread.start()
     print(f"[PEER ACTIVE CONNECTIONS] {threading.active_count() - 1}")
+
+    connected = True
+    while connected:
+       data = conn.recv(SIZE).decode(FORMAT)
+       if DOWNLOAD in data:
+        print(f"[LISTEN] Received Download request: {data}")
+        infos = data.split()
+        lname = infos[2]
+        fname = infos[1]
+        msg = f"send {fname}".encode(FORMAT)
+        sendf(conn, lname=lname)
+        conn.send(msg)
+       
 
 
 def pconnect():
@@ -114,19 +121,20 @@ def pconnect():
       connected = False
     elif PUBLISH in msg:
       print('PUBLISH')
-      msg = client.recv(SIZE).decode(FORMAT)
-      print(f"[SERVER PUBLISH] {msg}")
+      data = client.recv(SIZE).decode(FORMAT)
+      print(f"[SERVER PUBLISH] {data}")
     elif FETCH in msg:
       print('FETCH')
-      msg = client.recv(SIZE).decode(FORMAT)
+      data = client.recv(SIZE).decode(FORMAT)
       print(f"[SERVER] {msg}")
-      infos = msg.split()
+      infos = data.split()
       fname = infos[1]
       lname = infos[2]
       peer_ip = infos[3]
       peer_port = infos[4]
-      if peer_ip == CLIENT_IP:
-        cconnect(peer_ip=peer_ip, peer_port=peer_port, fname=fname, lname=lname)
+      if peer_ip != CLIENT_IP:
+        cconnect_thread = threading.Thread(target=cconnect, args=(peer_ip, peer_port, fname, lname))
+        cconnect_thread.start()
     elif SEND in msg:
       print('SEND')
       # msg = client.recv(SIZE).decode(FORMAT)
@@ -141,10 +149,10 @@ def pconnect():
 
 def main():
   connect_thread = threading.Thread(target=pconnect)
-  # listen_thread = threading.Thread(target=plisten)
+  listen_thread = threading.Thread(target=plisten)
 
   connect_thread.start()
-  # listen_thread.start()
+  listen_thread.start()
 
 
 if __name__ == "__main__":
